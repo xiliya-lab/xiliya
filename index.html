@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>乐次元 - 剧情模拟器</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#F4F1EA">
+  <link rel="icon" href="photo.JPG" type="image/jpeg">
+  <link rel="apple-touch-icon" href="photo.JPG">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+	
+<!-- 弹窗：系统设置 -->
+  <div id="modal-settings" class="modal hidden">
+    <div class="modal-content" style="max-width: 400px;">
+      <h2>系统配置</h2>
+      <div class="form-group">
+        <label>选择当前使用的密钥编号</label>
+        <select id="api-key-select"></select>
+      </div>
+      <div class="form-group">
+        <label>配置本地密钥库 (每行一个，格式：0001=你的真实密钥)</label>
+        <textarea id="api-key-db-input" placeholder="0001=AQ.Ab8RN6Ie...\n0002=AQ.Ab8RN6J2..." style="height: 120px; font-size: 0.8rem; white-space: pre; line-height: 1.5;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>模型选择</label>
+        <input type="text" id="model-input" placeholder="请输入或选择下方模型">
+        <div class="model-presets" id="model-presets">
+          <span class="preset-tag">gemini-1.5-flash</span>
+          <span class="preset-tag">gemini-1.5-pro</span>
+          <span class="preset-tag">gemini-2.0-flash-exp</span>
+          <span class="preset-tag">gemini-1.5-flash-8b</span>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-close-settings" class="btn-primary">保存设置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗：新建剧情 -->
+  <div id="modal-new-story" class="modal hidden">
+    <div class="modal-content relative-box">
+      <button id="btn-close-new" class="close-x">&times;</button>
+      <h2>新建剧情模块</h2>
+      <div class="form-group">
+        <label>剧情名称</label>
+        <input type="text" id="story-name" placeholder="给你的剧情起个好听的名字">
+      </div>
+      <div class="form-group">
+        <label>剧情背景</label>
+        <textarea id="prompt-bg" placeholder="例如：一个废弃的终端环境..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>主要角色</label>
+        <textarea id="prompt-char" placeholder="例如：瓦莱里安，带有自我意识的虚拟助手..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>玩家人设</label>
+        <textarea id="prompt-player" placeholder="例如：拥有最高权限的系统管理员..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>对话规则</label>
+        <textarea id="prompt-rules" placeholder="例如：每次回复必须推动剧情，并给出3个符合逻辑的选项..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-save-new" class="btn-primary">建立</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增弹窗：编辑剧情 -->
+  <div id="modal-edit-story" class="modal hidden">
+    <div class="modal-content relative-box">
+      <button id="btn-close-edit" class="close-x">&times;</button>
+      <h2>编辑剧情</h2>
+      <input type="hidden" id="edit-story-id">
+      <div class="form-group">
+        <label>剧情名称</label>
+        <input type="text" id="edit-story-name">
+      </div>
+      <div class="form-group">
+        <label>剧情背景</label>
+        <textarea id="edit-prompt-bg"></textarea>
+      </div>
+      <div class="form-group">
+        <label>主要角色</label>
+        <textarea id="edit-prompt-char"></textarea>
+      </div>
+      <div class="form-group">
+        <label>玩家人设</label>
+        <textarea id="edit-prompt-player"></textarea>
+      </div>
+      <div class="form-group">
+        <label>对话规则</label>
+        <textarea id="edit-prompt-rules"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-delete-story" class="btn-primary" style="background-color: #ff6b6b;">删除</button>
+        <button id="btn-update-story" class="btn-primary">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第一层：剧本大厅 -->
+  <div id="story-hub" class="layer active">
+    <header class="hub-header">
+      <button id="btn-open-settings" class="icon-btn">⋮</button>
+      <h1 class="app-title">乐次元</h1>
+      <button id="btn-open-new" class="icon-btn plus-btn">+</button>
+    </header>
+    <div class="scenario-cards" id="scenario-list">
+      <!-- 剧情卡片将通过 JS 动态生成 -->
+    </div>
+  </div>
+
+  <!-- 第二层：核心游玩界面 -->
+  <div id="gameplay-view" class="layer">
+    <header class="hub-header gameplay-header">
+      <button id="btn-exit-game" class="icon-btn">←</button>
+      <h1 class="app-title" id="gameplay-title">剧情名称</h1>
+      <button id="btn-open-saves" class="icon-btn">⋮</button>
+    </header>
+    
+    <div id="chat-container"></div>
+    
+    <div id="chat-input-area">
+      <div id="options-layer" class="hidden"></div>
+      <div class="custom-input-group">
+        <div class="input-wrapper">
+          <input type="text" id="custom-reply-input" placeholder="输入你的回复...">
+          <button id="btn-toggle-options" class="heart-btn">♡</button>
+        </div>
+        <button id="btn-send-reply" class="btn-primary">发送</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗：API 限制警告 -->
+  <div id="modal-api-limit" class="modal hidden">
+    <div class="modal-content relative-box">
+      <button id="btn-close-limit" class="close-x">&times;</button>
+      <h2>⚠️ 连接受限</h2>
+      <p style="margin-bottom: 1.5rem; color: var(--text-secondary); line-height: 1.6;">
+        当前 API 密钥可能已耗尽额度或触发频率限制。您刚才的回复已自动撤销。<br><br>请更换新的密钥编号后重试。
+      </p >
+      <div class="modal-actions">
+        <button id="btn-to-settings-from-limit" class="btn-primary">前往更换密钥</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 弹窗：存档管理 -->
+  <div id="modal-saves" class="modal hidden">
+    <div class="modal-content relative-box">
+      <button id="btn-close-saves" class="close-x">&times;</button>
+      <h2>世界线档案 (存档)</h2>
+      <div class="modal-actions" style="margin-bottom: 1rem; flex-direction: column; gap: 0.8rem;">
+        <button id="btn-create-save" class="btn-primary">保存当前进度</button>
+        <button id="btn-restart-game" class="btn-primary" style="background-color: #ff6b6b;">重新开始当前剧情</button>
+      </div>
+      <div id="saves-list" class="scenario-cards" style="padding: 0; max-height: 40vh;">
+      </div>
+    </div>
+  </div>
+
+  <script src="db_manager.js"></script>
+  <script src="llm_api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
