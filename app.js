@@ -300,10 +300,12 @@ async function sendTurn(userText) {
         if (!modelName) throw new Error("请先在设置中选择或输入模型名称");
 
         let actualKey = null;
-        const keyLines = keyDbStr.split('\n');
+        // 核心修复：兼容不同系统的换行，并使用正则切割全角、半角等号及冒号
+        const keyLines = keyDbStr.replace(/\r\n/g, '\n').split('\n');
         for (let line of keyLines) {
-            const parts = line.split('=');
+            const parts = line.split(/=|＝|:/);
             if (parts.length >= 2 && parts[0].trim() === apiKeyId) {
+                // 将切出去的其余部分拼回来（以防密钥内部本身就带有等号）
                 actualKey = parts.slice(1).join('=').trim();
                 break;
             }
@@ -329,7 +331,6 @@ async function sendTurn(userText) {
     } catch (error) {
         console.error("生成失败原因:", error.message);
         
-        // 出错时，无痕撤回刚才的过程
         chatHistory.pop(); 
         saveSessionToCache();
         removeTypingIndicator();
@@ -340,14 +341,13 @@ async function sendTurn(userText) {
         
         customReplyInput.value = userText;
 
-        // 核心修改：将具体的错误原因抛给玩家，彻底废弃原有弹窗
         if (error.message.includes("SAFETY_BLOCKED")) {
             appendAiBubble("【系统提示】：触发了底层安全拦截（涉嫌敏感违规内容）。请克制一下，修改措辞后重新发送。", null, true);
         } else if (error.message.includes("MISSING_KEY")) {
             const missingId = error.message.split(":")[1];
-            appendAiBubble(`【系统提示】：未找到编号 [${missingId}] 的真实密钥。请在右上角系统设置的密钥库中按照格式添加。`, null, true);
+            appendAiBubble(`【系统提示】：未在你的配置库中找到编号为 [${missingId}] 的真实密钥。请检查是否填写了全角符号或漏填。`, null, true);
         } else if (error.message.includes("API_ERROR")) {
-            appendAiBubble(`【系统提示】：API 通信失败 -> ${error.message.replace('API_ERROR:', '').trim()}。可能是密钥额度耗尽或模型名称填写错误。`, null, true);
+            appendAiBubble(`【系统提示】：API 通信失败 -> ${error.message.replace('API_ERROR:', '').trim()}。可能是密钥无效、额度耗尽或模型名称填写错误。`, null, true);
         } else if (error.message.includes("JSON_PARSE_ERROR")) {
             appendAiBubble("【系统提示】：AI 未按规定格式返回数据（可能是拒绝回答），请重试或修改提示词。", null, true);
         } else {
@@ -366,7 +366,6 @@ document.getElementById('btn-send-reply').addEventListener('click', () => {
     }
 });
 
-// API 限制警告弹窗（通过 js 关闭入口已闲置，但不影响全局，仅保留关闭绑定防错）
 document.getElementById('btn-close-limit').addEventListener('click', () => domApiLimitModal.classList.add('hidden'));
 document.getElementById('btn-to-settings-from-limit').addEventListener('click', () => {
     domApiLimitModal.classList.add('hidden');
