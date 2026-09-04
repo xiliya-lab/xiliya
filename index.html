@@ -11,11 +11,11 @@
   <meta name="theme-color" content="#F4F1EA">
   <link rel="icon" href="photo.JPG" type="image/jpeg">
   <link rel="apple-touch-icon" href="photo.JPG">
-  <link rel="stylesheet" href="style.css">
+  <!-- 强制更新 CSS -->
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
-	
-<!-- 弹窗：系统设置 -->
+  <!-- 弹窗：系统设置 -->
   <div id="modal-settings" class="modal hidden">
     <div class="modal-content" style="max-width: 400px;">
       <h2>系统配置</h2>
@@ -35,7 +35,6 @@
           <span class="preset-tag">gemini-3.5-flash</span>
           <span class="preset-tag">gemini-3.6-flash</span>
           <span class="preset-tag">gemini-3.7-flash</span>
-		  <span class="preset-tag">gemini-3.8-flash</span>
         </div>
       </div>
       <div class="modal-actions">
@@ -75,7 +74,7 @@
     </div>
   </div>
 
-  <!-- 新增弹窗：编辑剧情 -->
+  <!-- 弹窗：编辑剧情 -->
   <div id="modal-edit-story" class="modal hidden">
     <div class="modal-content relative-box">
       <button id="btn-close-edit" class="close-x">&times;</button>
@@ -115,9 +114,7 @@
       <h1 class="app-title">乐次元</h1>
       <button id="btn-open-new" class="icon-btn plus-btn">+</button>
     </header>
-    <div class="scenario-cards" id="scenario-list">
-      <!-- 剧情卡片将通过 JS 动态生成 -->
-    </div>
+    <div class="scenario-cards" id="scenario-list"></div>
   </div>
 
   <!-- 第二层：核心游玩界面 -->
@@ -142,16 +139,16 @@
     </div>
   </div>
 
-  <!-- 弹窗：API 限制警告 -->
+  <!-- 弹窗：API 限制警告 (保留结构防止报错，但不会再被触发) -->
   <div id="modal-api-limit" class="modal hidden">
     <div class="modal-content relative-box">
       <button id="btn-close-limit" class="close-x">&times;</button>
       <h2>⚠️ 连接受限</h2>
       <p style="margin-bottom: 1.5rem; color: var(--text-secondary); line-height: 1.6;">
-        当前 API 密钥可能已耗尽额度或触发频率限制。您刚才的回复已自动撤销。<br><br>请更换新的密钥编号后重试。
-      </p >
+        如果看到此弹窗，说明缓存未清理干净。
+      </p>
       <div class="modal-actions">
-        <button id="btn-to-settings-from-limit" class="btn-primary">前往更换密钥</button>
+        <button id="btn-to-settings-from-limit" class="btn-primary">确定</button>
       </div>
     </div>
   </div>
@@ -170,8 +167,9 @@
     </div>
   </div>
 
-  <script src="db_manager.js"></script>
-  <script src="llm_api.js"></script>
-  <script src="app.js"></script>
+  <!-- 核心修复：加入 v=3 强制手机更新本地文件 -->
+  <script src="db_manager.js?v=3"></script>
+  <script src="llm_api.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
