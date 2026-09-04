@@ -11,8 +11,7 @@
   <meta name="theme-color" content="#F4F1EA">
   <link rel="icon" href="photo.JPG" type="image/jpeg">
   <link rel="apple-touch-icon" href="photo.JPG">
-  <!-- 强制更新 CSS -->
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <!-- 弹窗：系统设置 -->
@@ -74,7 +73,7 @@
     </div>
   </div>
 
-  <!-- 弹窗：编辑剧情 -->
+  <!-- 新增弹窗：编辑剧情 -->
   <div id="modal-edit-story" class="modal hidden">
     <div class="modal-content relative-box">
       <button id="btn-close-edit" class="close-x">&times;</button>
@@ -139,7 +138,6 @@
     </div>
   </div>
 
-  <!-- 弹窗：API 限制警告 (保留结构防止报错，但不会再被触发) -->
   <div id="modal-api-limit" class="modal hidden">
     <div class="modal-content relative-box">
       <button id="btn-close-limit" class="close-x">&times;</button>
@@ -153,7 +151,6 @@
     </div>
   </div>
   
-  <!-- 弹窗：存档管理 -->
   <div id="modal-saves" class="modal hidden">
     <div class="modal-content relative-box">
       <button id="btn-close-saves" class="close-x">&times;</button>
@@ -167,9 +164,9 @@
     </div>
   </div>
 
-  <!-- 核心修复：加入 v=4 强制手机更新本地文件，摆脱旧版缓存 -->
-  <script src="db_manager.js?v=4"></script>
-  <script src="llm_api.js?v=4"></script>
-  <script src="app.js?v=4"></script>
+  <!-- 更新 JS 缓存机制 v=5 -->
+  <script src="db_manager.js?v=5"></script>
+  <script src="llm_api.js?v=5"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>
