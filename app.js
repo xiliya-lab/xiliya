@@ -15,7 +15,7 @@ const domSavesList = document.getElementById('saves-list');
 
 const scenarioList = document.getElementById('scenario-list');
 const apiKeySelect = document.getElementById('api-key-select');
-const apiKeyDbInput = document.getElementById('api-key-db-input'); // 新增：密钥库输入框
+const apiKeyDbInput = document.getElementById('api-key-db-input'); 
 const modelInput = document.getElementById('model-input');
 
 // --- 2. 状态变量 ---
@@ -44,7 +44,6 @@ async function initApp() {
         generateApiKeyOptions();
         await dbManager.init();
         
-        // 读取保存的编号和密钥库
         const apiKeyId = await dbManager.getSetting('api_key_id');
         const keyDbStr = await dbManager.getSetting('key_db_str');
         const model = await dbManager.getSetting('model');
@@ -87,7 +86,6 @@ document.getElementById('btn-open-settings').addEventListener('click', () => dom
 document.getElementById('btn-open-new').addEventListener('click', () => domNewStoryModal.classList.remove('hidden'));
 
 document.getElementById('btn-close-settings').addEventListener('click', async () => {
-    // 存储当前选中的编号和整个密钥库文本
     await dbManager.saveSetting('api_key_id', apiKeySelect.value);
     await dbManager.saveSetting('key_db_str', apiKeyDbInput.value);
     await dbManager.saveSetting('model', modelInput.value);
@@ -301,7 +299,6 @@ async function sendTurn(userText) {
         
         if (!modelName) throw new Error("请先在设置中选择或输入模型名称");
 
-        // 核心逻辑：从文本框内容中解析出对应的真实密钥
         let actualKey = null;
         const keyLines = keyDbStr.split('\n');
         for (let line of keyLines) {
@@ -332,6 +329,7 @@ async function sendTurn(userText) {
     } catch (error) {
         console.error("生成失败原因:", error.message);
         
+        // 出错时，无痕撤回刚才的过程
         chatHistory.pop(); 
         saveSessionToCache();
         removeTypingIndicator();
@@ -341,14 +339,19 @@ async function sendTurn(userText) {
         }
         
         customReplyInput.value = userText;
-        
+
+        // 核心修改：将具体的错误原因抛给玩家，彻底废弃原有弹窗
         if (error.message.includes("SAFETY_BLOCKED")) {
-            appendAiBubble("【系统提示】：触发了底层安全拦截。请克制一下，修改措辞后重新发送。", null, true);
+            appendAiBubble("【系统提示】：触发了底层安全拦截（涉嫌敏感违规内容）。请克制一下，修改措辞后重新发送。", null, true);
         } else if (error.message.includes("MISSING_KEY")) {
             const missingId = error.message.split(":")[1];
             appendAiBubble(`【系统提示】：未找到编号 [${missingId}] 的真实密钥。请在右上角系统设置的密钥库中按照格式添加。`, null, true);
+        } else if (error.message.includes("API_ERROR")) {
+            appendAiBubble(`【系统提示】：API 通信失败 -> ${error.message.replace('API_ERROR:', '').trim()}。可能是密钥额度耗尽或模型名称填写错误。`, null, true);
+        } else if (error.message.includes("JSON_PARSE_ERROR")) {
+            appendAiBubble("【系统提示】：AI 未按规定格式返回数据（可能是拒绝回答），请重试或修改提示词。", null, true);
         } else {
-            domApiLimitModal.classList.remove('hidden');
+            appendAiBubble(`【系统提示】：发生未知错误 -> ${error.message}`, null, true);
         }
         
         isAiGenerating = false; 
@@ -363,6 +366,7 @@ document.getElementById('btn-send-reply').addEventListener('click', () => {
     }
 });
 
+// API 限制警告弹窗（通过 js 关闭入口已闲置，但不影响全局，仅保留关闭绑定防错）
 document.getElementById('btn-close-limit').addEventListener('click', () => domApiLimitModal.classList.add('hidden'));
 document.getElementById('btn-to-settings-from-limit').addEventListener('click', () => {
     domApiLimitModal.classList.add('hidden');
