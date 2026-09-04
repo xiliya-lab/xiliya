@@ -33,7 +33,8 @@ const LlmApi = {
     },
 
     async generateReply(modelName, apiKey, chatHistory, systemInstruction) {
-        const endpoint = `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){modelName}:generateContent?key=${apiKey}`;
+        // 核心修复：清理了复制产生的非法超链接格式，恢复为标准 URL
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
         const payload = {
             system_instruction: { parts: [{ text: systemInstruction }] },
@@ -45,7 +46,6 @@ const LlmApi = {
                 { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
             ],
             generationConfig: {
-                // 移除 response_mime_type 防止 AI 拒绝回答时直接引发底层 400 崩溃
                 temperature: 0.85 
             }
         };
@@ -67,7 +67,6 @@ const LlmApi = {
 
         const data = await response.json();
 
-        // 精准拦截并抛出安全性阻止或为空的情况
         if (data.promptFeedback && data.promptFeedback.blockReason) {
             throw new Error(`SAFETY_BLOCKED`);
         }
@@ -84,7 +83,6 @@ const LlmApi = {
 
         try {
             let aiOutput = candidate.content.parts[0].text;
-            // 核心修复：强力剥离 AI 可能会带上的 ```json 和 ``` 标记
             aiOutput = aiOutput.replace(/```json/gi, '').replace(/```/g, '').trim();
             return JSON.parse(aiOutput); 
         } catch (e) {
