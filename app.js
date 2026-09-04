@@ -341,19 +341,26 @@ async function sendTurn(userText) {
         
         customReplyInput.value = userText;
 
-        // --- 根据新的通信架构更新提示 ---
         if (error.message.includes("SAFETY_BLOCKED")) {
             appendAiBubble("【系统拦截】：剧情触碰了安全底线，AI 强制拒绝了回复。请稍微克制一下，修改回复后重试。", null, true);
-        } else if (error.message.includes("SERVER_OVERLOADED")) {
-            appendAiBubble("【系统提示】：Google 服务器极其拥挤。系统已在后台自动为您重试了 3 次，但依然未能挤入。请稍等片刻再点击发送。", null, true);
+        } else if (error.message.includes("SERVER_TEMP_ERROR")) {
+            // 核心提示变更
+            appendAiBubble("【系统提示】：Google 后台服务器出现崩溃或极度拥挤。系统已静默重试多次但依然失败，请稍等片刻再点击发送。", null, true);
         } else if (error.message.includes("MISSING_KEY")) {
             const missingId = error.message.split(":")[1];
-            appendAiBubble(`【系统提示】：未在配置库找到编号 [${missingId}] 的真实密钥。`, null, true);
+            appendAiBubble(`【系统提示】：未在配置库找到编号 [${missingId}] 的真实密钥。请检查格式。`, null, true);
+        } else if (error.message.includes("JSON_PARSE_ERROR")) {
+            const rawText = error.message.substring(error.message.indexOf('|') + 1).trim();
+            if (rawText && !rawText.includes("获取文本失败")) {
+                appendAiBubble(`【系统拦截】：AI 脱离了剧本格式（可能偷偷输出了委婉的拒绝语）。\n\nAI 实际想对你说的原话是：\n「${rawText}」\n\n请修改你的输入后重新发送。`, null, true);
+            } else {
+                appendAiBubble("【系统提示】：AI 返回的数据格式严重损坏，请重试。", null, true);
+            }
         } else if (error.message.includes("API_ERROR")) {
             let errInfo = error.message.replace('API_ERROR:', '').trim();
-            appendAiBubble(`【系统提示】：通信失败。请检查密钥是否正确，或模型名称是否存在 (${errInfo})`, null, true);
+            appendAiBubble(`【系统提示】：通信失败 (${errInfo})。可能是模型名不存在或 API 被强行阻断。`, null, true);
         } else {
-            appendAiBubble(`【系统提示】：发生异常 -> ${error.message}，请重试。`, null, true);
+            appendAiBubble(`【系统提示】：未知错误 -> ${error.message}`, null, true);
         }
         
         isAiGenerating = false; 
