@@ -341,17 +341,30 @@ async function sendTurn(userText) {
         
         customReplyInput.value = userText;
 
+        // --- 核心修复：把 AI 背后的真实想法直接曝光给你看 ---
         if (error.message.includes("SAFETY_BLOCKED")) {
-            appendAiBubble("【系统提示】：触发了底层安全拦截（涉嫌敏感违规内容）。请克制一下，修改措辞后重新发送。", null, true);
+            appendAiBubble("【系统拦截】：剧情触碰了安全底线，AI 强制拒绝了回复。请稍微克制一下，修改回复后重试。", null, true);
         } else if (error.message.includes("MISSING_KEY")) {
             const missingId = error.message.split(":")[1];
-            appendAiBubble(`【系统提示】：未在你的配置库中找到编号为 [${missingId}] 的真实密钥。请检查是否填写了全角符号或漏填。`, null, true);
-        } else if (error.message.includes("API_ERROR")) {
-            appendAiBubble(`【系统提示】：API 通信失败 -> ${error.message.replace('API_ERROR:', '').trim()}。可能是密钥无效、额度耗尽或模型名称填写错误。`, null, true);
+            appendAiBubble(`【系统提示】：未在配置库找到编号 [${missingId}] 的真实密钥。`, null, true);
         } else if (error.message.includes("JSON_PARSE_ERROR")) {
-            appendAiBubble("【系统提示】：AI 未按规定格式返回数据（可能是拒绝回答），请重试或修改提示词。", null, true);
+            const rawText = error.message.substring(error.message.indexOf('|') + 1).trim();
+            if (rawText && !rawText.includes("获取文本失败")) {
+                appendAiBubble(`【系统拦截】：AI 脱离了剧本格式！这通常是因为剧情过激，AI 偷偷输出了委婉的拒绝语。\n\nAI 实际想对你说的原话是：\n「${rawText}」\n\n请修改你的输入后重新发送。`, null, true);
+            } else {
+                appendAiBubble("【系统提示】：AI 返回的数据格式严重损坏，请重试。", null, true);
+            }
+        } else if (error.message.includes("API_ERROR")) {
+            let errInfo = error.message.replace('API_ERROR:', '').trim();
+            if (errInfo.includes("high demand") || errInfo.includes("overloaded")) {
+                appendAiBubble("【系统提示】：Google 官方服务器当前被挤爆了。请稍等十几秒后重新点击发送。", null, true);
+            } else if (errInfo.includes("400")) {
+                appendAiBubble(`【系统拦截】：通信失败 (400)。这是因为剧情露骨，Google 底层接口直接拔线了。请修改措辞（如采用拉灯描写）。`, null, true);
+            } else {
+                appendAiBubble(`【系统提示】：通信失败 (${errInfo})。可能是模型名不存在或 API 额度限制。`, null, true);
+            }
         } else {
-            appendAiBubble(`【系统提示】：发生未知错误 -> ${error.message}`, null, true);
+            appendAiBubble(`【系统提示】：未知错误 -> ${error.message}`, null, true);
         }
         
         isAiGenerating = false; 
